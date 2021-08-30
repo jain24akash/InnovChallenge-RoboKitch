@@ -1,2 +1,5 @@
 node_modules
 package-lock.json
+
+# added by cds deploy
+default-env.json
