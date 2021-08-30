@@ -47,7 +47,7 @@ module.exports = cds.service.impl(function () {
             .create({
 
                 // Message to be sent
-                body: 'Hello from SAP CAP model',
+                body: "Hello" + req.data.itemList,
 
                 // Senders Number (Twilio Sandbox No.)
                 from: 'whatsapp:+14155238886',
@@ -59,6 +59,24 @@ module.exports = cds.service.impl(function () {
             .done();
 
         return true;
+    });
+
+    this.on('register', async (req) => {
+        const db = await cds.connect.to('db')
+
+        const { userCredentials } = db.entities('test');
+        let success = await INSERT.into(userCredentials).entries({
+            user: req.data.user,
+            password: req.data.password,
+            name: req.data.name
+        })
+        
+        if(success) return true
+        else{
+            req.data.error(400,`Username ${req.data.user} is taken`);
+            return false;
+        };
+        
     })
 
 })
