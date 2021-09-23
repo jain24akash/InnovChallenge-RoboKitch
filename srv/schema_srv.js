@@ -2,25 +2,35 @@
 const cds = require('@sap/cds')
 const emailer = require('nodemailer');
 
+const notifText = 'Dear Vendor' + ', ' +
+    'Please deliver the items' + ': ' +
+    'Rice - 5000g, Sugar - 1000g, Tea - 1000g.'
+
+const notifHtmlText = '<body>Dear Vendor, <br> Please deliver the following items: <br> 1. Rice - 5000g <br> 2. Sugar - 1000g <br> 3. Tea - 1000g </body>'
 module.exports = cds.service.impl(function () {
     this.on('sendEmail', async (req) => {
+        console.log('trying to create transport');
+        
         let transporter = emailer.createTransport({
             host: "smtp.gmail.com",
             port: 587,
-            secure: false, // true for 465, false for other ports
+            secureConnection: false, // true for 465, false for other ports
             auth: {
                 user: 'dummyinnovchallenge@gmail.com',
                 pass: 'Tarun@123',
+            },
+            tls: {
+                ciphers: 'SSLv3'
             },
         });
 
         // send mail with defined transport object
         let info = await transporter.sendMail({
             from: 'dummyinnovchallenge@gmail.com', // sender address
-            to: "aakash.jain01@sap.com, jain24akash@gmail.com", // list of receivers
-            subject: "Hello ✔", // Subject line
-            text: "Hello" + req.data.itemList, // plain text body
-            // html: "<b>Hello world?</b>", // html body
+            to: "aakash.jain01@sap.com, jain24akash@gmail.com, preeti.singh.kshatriya@sap.com", // list of receivers
+            subject: "Delivery Order", // Subject line
+            //text: notifText, // plain text body
+            html: notifHtmlText // html body
         });
 
         console.log("Message sent: %s", info);
@@ -38,7 +48,7 @@ module.exports = cds.service.impl(function () {
 
     this.on('sendWhatsApp', async (req) => {
         const accountSid = 'ACeb0fdcefcfd9c82adbdb52325b0fe433';
-        const authToken = '08594fdec76b5ac342b3373193048471';
+        const authToken = '485cfd83e8b67417ac437cb0591cb7cd';
 
         const client = require('twilio')(accountSid, authToken);
 
@@ -47,7 +57,7 @@ module.exports = cds.service.impl(function () {
             .create({
 
                 // Message to be sent
-                body: "Hello" + req.data.itemList,
+                body: notifText,
 
                 // Senders Number (Twilio Sandbox No.)
                 from: 'whatsapp:+14155238886',
@@ -66,17 +76,27 @@ module.exports = cds.service.impl(function () {
 
         const { userCredentials } = db.entities('test');
         let success = await INSERT.into(userCredentials).entries({
-            user: req.data.user,
+            mobileNumber: req.data.mobileNumber,
             password: req.data.password,
-            name: req.data.name
+            name: req.data.name,
+            emailID: req.data.emailID
         })
-        
-        if(success) return true
-        else{
-            req.data.error(400,`Username ${req.data.user} is taken`);
+
+        if (success) return true
+        else {
+            req.data.error(400, `Mobile Number ${req.data.mobileNumber} already exists`);
             return false;
         };
-        
+
+    })
+
+    this.on('login', async (req) => {
+        const db = await cds.connect.to('db')
+        const { userCredentials } = db.entities('test');
+
+        let user = await SELECT.one.from(userCredentials).where`mobileNumber = ${req.data.mobileNumber} and password = ${req.data.password}`;
+        if (user && user.mobileNumber) return true;
+        return false;
     })
 
 })

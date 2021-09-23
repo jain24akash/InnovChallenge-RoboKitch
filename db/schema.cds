@@ -8,7 +8,8 @@ entity weight : managed {
 }
 
 entity userCredentials : managed {
-    key user     : String;
-        password : String;
-        name     : String;
+    key mobileNumber : String(10);
+        password     : String;
+        name         : String;
+        emailID      : String;
 }
